@@ -2,12 +2,19 @@ package app
 
 import (
 	"github.com/Cheasezz/authSrvc/config"
+	"github.com/Cheasezz/authSrvc/pkg/logger"
 )
 
-type Env struct{}
+type Env struct {
+	Logger logger.Logger
+}
 
 func NewEnv(cfg *config.Config) (*Env, error) {
-	env := Env{}
+	logger := logger.New(cfg.Log.Level)
+
+	env := Env{
+		Logger: logger,
+	}
 
 	return &env, nil
 }

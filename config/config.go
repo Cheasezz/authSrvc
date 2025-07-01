@@ -8,11 +8,16 @@ import (
 
 type Config struct {
 	HTTP `yaml:"http"`
+	Log  `yaml:"logger"`
 }
 
 type HTTP struct {
 	Host string `env-required:"false" yaml:"host" env:"HOST"`
 	Port string `env-required:"false" yaml:"port" env:"PORT"`
+}
+
+type Log struct {
+	Level string `env-required:"false" yaml:"log_level" env:"LOG_LEVEL"`
 }
 
 func NewConfig() (*Config, error) {
