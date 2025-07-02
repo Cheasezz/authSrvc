@@ -31,7 +31,7 @@ func main() {
 
 	handlers := handlers.New(env)
 	srv := httpsrvr.New(handlers.Init(), cfg.HTTP.Host, cfg.HTTP.Port)
-	env.Logger.Info("Auth service started")
+	env.Logger.Info("Auth server started")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
@@ -47,5 +47,5 @@ func main() {
 		env.Logger.Error(err, "auth server error shutting down")
 	}
 
-	env.Logger.Info("Auth service server shutting down")
+	env.Logger.Info("Auth server shutting down")
 }

@@ -2,13 +2,18 @@ package handlers
 
 import (
 	"github.com/Cheasezz/authSrvc/internal/app"
+	"github.com/Cheasezz/authSrvc/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
-type Handlers struct{}
+type Handlers struct {
+	logger logger.Logger
+}
 
 func New(env *app.Env) *Handlers {
-	return &Handlers{}
+	return &Handlers{
+		logger: env.Logger,
+	}
 }
 
 func (h *Handlers) Init() *gin.Engine {
