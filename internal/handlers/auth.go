@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Cheasezz/authSrvc/internal/apperrors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -16,7 +17,8 @@ func (h *Handlers) signup(c *gin.Context) {
 	id := c.Query("uuid")
 	_, err := uuid.Parse(id)
 	if err != nil {
-		h.errResponse(c, http.StatusBadRequest, err, errUncorrectUuid)
+		c.Status(http.StatusBadRequest)
+		c.Error(apperrors.New(err, errUncorrectUuid))
 		return
 	}
 

@@ -12,10 +12,11 @@ type Logger interface {
 	Info(message string, args ...any)
 	Error(message any, args ...any)
 	Fatal(message any, args ...any)
+	WithField(fields map[string]any) Logger
 }
 
 type lg struct {
-	logger *logrus.Logger
+	logger logrus.FieldLogger
 }
 
 func New(level string) Logger {
@@ -57,6 +58,12 @@ func (l *lg) Error(message any, args ...any) {
 
 func (l *lg) Fatal(message any, args ...any) {
 	l.logger.Fatalf(toFormat(message), args...)
+}
+
+func (l *lg) WithField(fields map[string]any) Logger {
+	return &lg{
+		logger: l.logger.WithFields(logrus.Fields(fields)),
+	}
 }
 
 func toFormat(m any) string {

@@ -20,7 +20,7 @@ func New(env *app.Env) *Handlers {
 
 func (h *Handlers) Init() *gin.Engine {
 	router := gin.New()
-	router.Use(gin.Recovery())
+	router.Use(gin.Recovery(), h.errMiddleware)
 
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{
