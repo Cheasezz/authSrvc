@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/Cheasezz/authSrvc/internal/app"
 	"github.com/Cheasezz/authSrvc/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -21,13 +23,14 @@ func (h *Handlers) Init() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"message": "err",
 		})
 	})
 
 	{
 		api := router.Group("/api")
+		api.POST("/signup", h.signup)
 	}
 	return router
 }

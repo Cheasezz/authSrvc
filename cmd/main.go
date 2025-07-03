@@ -15,17 +15,17 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Error loading env variables: %s", err.Error())
+		log.Printf("Error loading env variables: %s", err)
 	}
 
 	cfg, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("Config error: %s", err.Error())
+		log.Fatalf("Config error: %s", err)
 	}
 
 	env, err := app.NewEnv(cfg)
 	if err != nil {
-		log.Fatalf("Error create environment: %s", err.Error())
+		log.Fatalf("Error create environment: %s", err)
 	}
 	defer env.Close()
 
@@ -38,13 +38,13 @@ func main() {
 
 	select {
 	case s := <-quit:
-		env.Logger.Info(s.String(), "signal quit")
+		env.Logger.Info("signal quit: %s", s)
 	case err = <-srv.Notify():
-		env.Logger.Error(err, "auth server error on srv.Notify")
+		env.Logger.Error("auth server error on srv.Notify: %s", err)
 	}
 
 	if err := srv.Shutdown(); err != nil {
-		env.Logger.Error(err, "auth server error shutting down")
+		env.Logger.Error("auth server error shutting down: %s", err)
 	}
 
 	env.Logger.Info("Auth server shutting down")
