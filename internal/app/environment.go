@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/Cheasezz/authSrvc/config"
+	"github.com/Cheasezz/authSrvc/internal/services"
 	"github.com/Cheasezz/authSrvc/pkg/logger"
 	"github.com/Cheasezz/authSrvc/pkg/tokens"
 )
@@ -15,6 +16,7 @@ var (
 type Env struct {
 	Logger     logger.Logger
 	TknManager tokens.Manager
+	Services   services.Services
 }
 
 func NewEnv(cfg *config.Config) (*Env, error) {
@@ -24,9 +26,12 @@ func NewEnv(cfg *config.Config) (*Env, error) {
 	if err != nil {
 		return nil, errors.Join(ErrTokensNew, err)
 	}
+
+	services := services.New(manager)
 	env := Env{
 		Logger:     logger,
 		TknManager: manager,
+		Services:   services,
 	}
 
 	return &env, nil

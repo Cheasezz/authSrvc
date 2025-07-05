@@ -4,17 +4,20 @@ import (
 	"net/http"
 
 	"github.com/Cheasezz/authSrvc/internal/app"
+	"github.com/Cheasezz/authSrvc/internal/services"
 	"github.com/Cheasezz/authSrvc/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {
-	logger logger.Logger
+	logger   logger.Logger
+	services services.Services
 }
 
 func New(env *app.Env) *Handlers {
 	return &Handlers{
-		logger: env.Logger,
+		logger:   env.Logger,
+		services: env.Services,
 	}
 }
 

@@ -23,9 +23,16 @@ type Manager interface {
 	ParseAccessToken(accessTkn string) (string, error)
 	NewRefreshToken() (string, error)
 	ParseRefreshToken(refreshTkn string) (string, error)
+	NewTokensPair(userId string) (TokensPair, error)
 }
 
-type managerStrct struct {
+type TokensPair struct {
+	AccessToken     string
+	RefreshToken    string
+	RefreshTokenTtl time.Duration
+}
+
+type manager struct {
 	signingKey    string
 	accessTknTTL  time.Duration
 	refreshTknTTL time.Duration
@@ -36,7 +43,7 @@ func New(signingKey string, accessTknTTL, refreshTknTTL time.Duration) (Manager,
 		return nil, ErrEmptySigningKey
 	}
 
-	return &managerStrct{
+	return &manager{
 		signingKey,
 		accessTknTTL,
 		refreshTknTTL,
@@ -44,7 +51,7 @@ func New(signingKey string, accessTknTTL, refreshTknTTL time.Duration) (Manager,
 }
 
 // Создание jwt токена доступа. Стандартные claims, решил, что кастомные будут излишком
-func (m *managerStrct) NewAccessToken(userId string) (string, error) {
+func (m *manager) NewAccessToken(userId string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
 		"sub": userId,
 		"exp": time.Now().Add(m.accessTknTTL).Unix(),
@@ -59,7 +66,7 @@ func (m *managerStrct) NewAccessToken(userId string) (string, error) {
 }
 
 // Парсинг jwt токена доступа. Вернет содержимое поле sub из claims.
-func (m *managerStrct) ParseAccessToken(accessTkn string) (string, error) {
+func (m *manager) ParseAccessToken(accessTkn string) (string, error) {
 	token, err := jwt.Parse(accessTkn, func(t *jwt.Token) (any, error) {
 		return []byte(m.signingKey), nil
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Alg()}))
@@ -79,7 +86,7 @@ func (m *managerStrct) ParseAccessToken(accessTkn string) (string, error) {
 }
 
 // Создание jwt рефреш токена. Вернет подписанный токен
-func (m *managerStrct) NewRefreshToken() (string, error) {
+func (m *manager) NewRefreshToken() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"exp": time.Now().Add(m.refreshTknTTL).Unix(),
 	})
@@ -93,7 +100,7 @@ func (m *managerStrct) NewRefreshToken() (string, error) {
 }
 
 // Парсинг jwt рефреш токена. Проверит и вернет токен.
-func (m *managerStrct) ParseRefreshToken(refreshTkn string) (string, error) {
+func (m *manager) ParseRefreshToken(refreshTkn string) (string, error) {
 	token, err := jwt.Parse(refreshTkn, func(t *jwt.Token) (any, error) {
 		return []byte(m.signingKey), nil
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
@@ -101,4 +108,20 @@ func (m *managerStrct) ParseRefreshToken(refreshTkn string) (string, error) {
 		return "", errors.Join(ErrRefreshParsing, err)
 	}
 	return token.Raw, nil
+}
+
+// Объединение создания токена доступа и рефреш токена.
+// Вернет структур с парой токенов.
+func (m *manager) NewTokensPair(userId string) (TokensPair, error) {
+	accessT, err := m.NewAccessToken(userId)
+	if err != nil {
+		return TokensPair{}, err
+	}
+
+	refreshT, err := m.NewRefreshToken()
+	if err != nil {
+		return TokensPair{}, err
+	}
+
+	return TokensPair{accessT, refreshT, m.refreshTknTTL}, nil
 }
