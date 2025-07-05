@@ -1,5 +1,7 @@
 package services
 
-func (s *Services) Singup() {
+import "context"
+
+func (s *Services) Singup(ctx context.Context, userId string) {
 
 }

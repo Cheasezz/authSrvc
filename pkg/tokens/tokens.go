@@ -1,7 +1,6 @@
 package tokens
 
 import (
-	"encoding/base64"
 	"errors"
 	"time"
 
@@ -17,7 +16,6 @@ var (
 	ErrGenerateRefreshT = errors.New("error when rand.Read in NewRefreshToken")
 	ErrSignedRefresh    = errors.New("error when signing token in NewRefreshToken")
 	ErrRefreshParsing   = errors.New("error when parsing refresh token in ParseRefreshToken")
-	ErrDecodeRefresh    = errors.New("error when decode base64 refresh token in ParseRefreshToken")
 )
 
 type Manager interface {
@@ -80,7 +78,7 @@ func (m *managerStrct) ParseAccessToken(accessTkn string) (string, error) {
 	}
 }
 
-// Создание jwt рефреш токена. Вернет подписанный токен в base64
+// Создание jwt рефреш токена. Вернет подписанный токен
 func (m *managerStrct) NewRefreshToken() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"exp": time.Now().Add(m.refreshTknTTL).Unix(),
@@ -90,18 +88,13 @@ func (m *managerStrct) NewRefreshToken() (string, error) {
 	if err != nil {
 		return "", errors.Join(ErrSignedRefresh, err)
 	}
-	tokenStr := base64.URLEncoding.EncodeToString([]byte(signedTkn))
-	return tokenStr, nil
+
+	return signedTkn, nil
 }
 
-// Парсинг jwt рефреш токена формата base64.
-// Приведет к стандартносу виду jwt, проверит и вернет токен.
-func (m *managerStrct) ParseRefreshToken(refreshTknBase64 string) (string, error) {
-	tokenStr, err := base64.URLEncoding.DecodeString(refreshTknBase64)
-	if err != nil {
-		return "", errors.Join(ErrDecodeRefresh, err)
-	}
-	token, err := jwt.Parse(string(tokenStr), func(t *jwt.Token) (any, error) {
+// Парсинг jwt рефреш токена. Проверит и вернет токен.
+func (m *managerStrct) ParseRefreshToken(refreshTkn string) (string, error) {
+	token, err := jwt.Parse(refreshTkn, func(t *jwt.Token) (any, error) {
 		return []byte(m.signingKey), nil
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
