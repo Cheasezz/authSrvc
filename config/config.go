@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -9,6 +10,7 @@ import (
 type Config struct {
 	HTTP `yaml:"http"`
 	Log  `yaml:"logger"`
+	Auth `yaml:"auth"`
 }
 
 type HTTP struct {
@@ -18,6 +20,12 @@ type HTTP struct {
 
 type Log struct {
 	Level string `env-required:"false" yaml:"log_level" env:"LOG_LEVEL"`
+}
+
+type Auth struct {
+	SigningKey      string        `env-required:"false" yaml:"signing_key" env:"SIGNING_KEY"`
+	AccessTokenTTL  time.Duration `env-required:"false" yaml:"accessttl" env:"ATTL"`
+	RefreshTokenTTL time.Duration `env-required:"false" yaml:"refreshttl" env:"RTTL"`
 }
 
 func NewConfig() (*Config, error) {

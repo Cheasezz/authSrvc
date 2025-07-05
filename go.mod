@@ -4,6 +4,8 @@ go 1.24.4
 
 require github.com/gin-gonic/gin v1.10.1
 
+require github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
+
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	errUncorrectUuid = errors.New("signup error: uncorrect uuid")
+	ErrUncorrectUuid = errors.New("signup error: uncorrect uuid")
 )
 
 func (h *Handlers) signup(c *gin.Context) {
@@ -18,7 +18,7 @@ func (h *Handlers) signup(c *gin.Context) {
 	_, err := uuid.Parse(id)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
-		c.Error(apperrors.New(err, errUncorrectUuid))
+		c.Error(apperrors.New(err, ErrUncorrectUuid))
 		return
 	}
 

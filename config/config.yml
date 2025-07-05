@@ -4,3 +4,8 @@ http:
 
 logger:
   log_level: "debug"
+
+auth:
+  signing_key: "qqvgfg5jk3fwioi2ifsd"
+  accessttl: 15m
+  refreshttl: 1440m
