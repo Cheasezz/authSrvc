@@ -13,6 +13,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @title Auth server API
+// @version 1.0
+// @description API Server for Auth
+// @BasePath /
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Error loading env variables: %s", err)
@@ -30,7 +34,7 @@ func main() {
 	defer env.Close()
 
 	handlers := handlers.New(env)
-	srv := httpsrvr.New(handlers.Init(), cfg.HTTP.Host, cfg.HTTP.Port)
+	srv := httpsrvr.New(handlers.Init(cfg.App.DevMod), cfg.HTTP.Host, cfg.HTTP.Port)
 	env.Logger.Info("Auth server started")
 
 	quit := make(chan os.Signal, 1)

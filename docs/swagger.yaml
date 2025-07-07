@@ -1,0 +1,70 @@
+basePath: /
+definitions:
+  handlers.TokenResponse:
+    properties:
+      access:
+        example: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA
+        type: string
+    type: object
+  handlers.badRequestResp:
+    properties:
+      message:
+        example: 'signup error: uncorrect uuid'
+        type: string
+      success:
+        example: false
+        type: boolean
+    type: object
+  handlers.srvrErrResp:
+    properties:
+      message:
+        example: 'signup errror: error on server side or user already exist'
+        type: string
+      success:
+        example: false
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: API Server for Auth
+  title: Auth server API
+  version: "1.0"
+paths:
+  /api/signup:
+    post:
+      consumes:
+      - application/json
+      description: create account in db and return access token in JSON and refresh
+        token in cookies
+      operationId: create-account
+      parameters:
+      - description: User uuid
+        example: fb62aa81-1172-4c73-8fc3-cd5a446346bf
+        in: query
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: 'JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21;
+                Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None'
+              type: string
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.badRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.srvrErrResp'
+      summary: create account
+      tags:
+      - auth
+swagger: "2.0"

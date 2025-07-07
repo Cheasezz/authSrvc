@@ -12,6 +12,7 @@ type Config struct {
 	Log  `yaml:"logger"`
 	Auth `yaml:"auth"`
 	PG   `yaml:"pg"`
+	App  `yaml:"app"`
 }
 
 type HTTP struct {
@@ -32,6 +33,10 @@ type Auth struct {
 type PG struct {
 	URL        string `env-required:"false" yaml:"pg_url"   env:"PG_URL"`
 	Schema_Url string `env-required:"false" yaml:"schema_url"   env:"SCHEMA_URL"`
+}
+
+type App struct {
+	DevMod bool `env-required:"false" yaml:"dev_mod" env:"MOD"`
 }
 
 func NewConfig() (*Config, error) {

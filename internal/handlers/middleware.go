@@ -20,12 +20,10 @@ func (h *Handlers) errMiddleware(c *gin.Context) {
 				"userIp": c.ClientIP(),
 			}).Error(appErr.LogErr)
 
-			c.AbortWithStatusJSON(c.Writer.Status(), gin.H{
-				"success": false,
-				"message": appErr.Error(),
+			c.AbortWithStatusJSON(c.Writer.Status(), ErrorResponse{
+				Success: false,
+				Message: appErr.Error(),
 			})
 		}
-
 	}
-
 }

@@ -13,3 +13,6 @@ auth:
 pg:
   pg_url: "postgres:qwerty@localhost:5432/postgres?sslmode=disable"
   schema_url: "migrations"
+
+app:
+  dev_mod: true
