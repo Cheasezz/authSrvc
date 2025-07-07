@@ -42,7 +42,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error when migrate ", err)
 	}
-	m.Up()
+	err = m.Up()
 	defer m.Close()
 
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {

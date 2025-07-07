@@ -25,7 +25,7 @@ func (h *Handlers) signup(c *gin.Context) {
 		return
 	}
 
-	tkns, err := h.services.Signup(c, uuid.String())
+	tkns, err := h.services.Signup(c, uuid)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		c.Error(apperrors.New(err, ErrorServer))

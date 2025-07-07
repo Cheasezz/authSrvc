@@ -5,19 +5,23 @@ import (
 
 	"github.com/Cheasezz/authSrvc/config"
 	"github.com/Cheasezz/authSrvc/internal/core"
+	"github.com/Cheasezz/authSrvc/internal/repo"
 	"github.com/Cheasezz/authSrvc/internal/services"
 	"github.com/Cheasezz/authSrvc/pkg/logger"
+	"github.com/Cheasezz/authSrvc/pkg/pgx5"
 	"github.com/Cheasezz/authSrvc/pkg/tokens"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
 	ErrTokensNew = errors.New("error when tokens.New in NewEnv")
+	ErrPoolNew   = errors.New("error when pgx5.New in NewEnv")
 )
 
 type Env struct {
-	Logger     logger.Logger
-	TknManager tokens.Manager
-	Services   core.AuthService
+	Logger   logger.Logger
+	Services core.AuthService
+	db       *pgxpool.Pool
 }
 
 func NewEnv(cfg *config.Config) (*Env, error) {
@@ -28,14 +32,23 @@ func NewEnv(cfg *config.Config) (*Env, error) {
 		return nil, errors.Join(ErrTokensNew, err)
 	}
 
-	services := services.New(manager)
+	pool, err := pgx5.New(cfg.PG.URL)
+	if err != nil {
+		return nil, errors.Join(ErrPoolNew, err)
+	}
+
+	repo := repo.New(pool)
+
+	services := services.New(manager, repo)
 	env := Env{
-		Logger:     logger,
-		TknManager: manager,
-		Services:   services,
+		Logger:   logger,
+		Services: services,
+		db:       pool,
 	}
 
 	return &env, nil
 }
 
-func (env *Env) Close() {}
+func (env *Env) Close() {
+	env.db.Close()
+}
