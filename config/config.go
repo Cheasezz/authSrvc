@@ -11,6 +11,7 @@ type Config struct {
 	HTTP `yaml:"http"`
 	Log  `yaml:"logger"`
 	Auth `yaml:"auth"`
+	PG   `yaml:"pg"`
 }
 
 type HTTP struct {
@@ -26,6 +27,11 @@ type Auth struct {
 	SigningKey      string        `env-required:"false" yaml:"signing_key" env:"SIGNING_KEY"`
 	AccessTokenTTL  time.Duration `env-required:"false" yaml:"accessttl" env:"ATTL"`
 	RefreshTokenTTL time.Duration `env-required:"false" yaml:"refreshttl" env:"RTTL"`
+}
+
+type PG struct {
+	URL        string `env-required:"false" yaml:"pg_url"   env:"PG_URL"`
+	Schema_Url string `env-required:"false" yaml:"schema_url"   env:"SCHEMA_URL"`
 }
 
 func NewConfig() (*Config, error) {

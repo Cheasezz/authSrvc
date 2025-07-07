@@ -9,3 +9,7 @@ auth:
   signing_key: "qqvgfg5jk3fwioi2ifsd"
   accessttl: 15m
   refreshttl: 1440m
+
+pg:
+  pg_url: "postgres:qwerty@localhost:5432/postgres?sslmode=disable"
+  schema_url: "migrations"
