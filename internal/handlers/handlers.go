@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/Cheasezz/authSrvc/internal/app"
-	"github.com/Cheasezz/authSrvc/internal/services"
+	"github.com/Cheasezz/authSrvc/internal/core"
 	"github.com/Cheasezz/authSrvc/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {
 	logger   logger.Logger
-	services services.Services
+	services core.AuthService
 }
 
 func New(env *app.Env) *Handlers {
