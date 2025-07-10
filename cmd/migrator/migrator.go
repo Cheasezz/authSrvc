@@ -7,7 +7,7 @@ import (
 
 	"github.com/Cheasezz/authSrvc/config"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/joho/godotenv"
 )
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	for attempts > 0 {
-		m, err = migrate.New("file://"+cfg.PG.Schema_Url, "pgx5://"+cfg.PG.URL)
+		m, err = migrate.New("file://migrations", cfg.PG.URL)
 		if err == nil {
 			break
 		}

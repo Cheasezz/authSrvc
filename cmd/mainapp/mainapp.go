@@ -35,7 +35,7 @@ func main() {
 
 	handlers := handlers.New(env)
 	srv := httpsrvr.New(handlers.Init(cfg.App.DevMod), cfg.HTTP.Host, cfg.HTTP.Port)
-	env.Logger.Info("Auth server started")
+	env.Logger.Info("Auth server started on http://%s:%s", cfg.HTTP.Host, cfg.HTTP.Port)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)

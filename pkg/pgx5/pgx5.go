@@ -19,10 +19,10 @@ var (
 	ErrPing             = errors.New("error when ping db in pgx5.New")
 )
 
-func New(dbDsn string) (*pgxpool.Pool, error) {
+func New(dbUrl string) (*pgxpool.Pool, error) {
 	var pool *pgxpool.Pool
 
-	poolConfig, err := pgxpool.ParseConfig("postgres://" + dbDsn)
+	poolConfig, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {
 		return nil, errors.Join(ErrParseCfg, err)
 	}

@@ -31,8 +31,7 @@ type Auth struct {
 }
 
 type PG struct {
-	URL        string `env-required:"false" yaml:"pg_url"   env:"PG_URL"`
-	Schema_Url string `env-required:"false" yaml:"schema_url"   env:"SCHEMA_URL"`
+	URL string `env-required:"false" yaml:"pg_url"   env:"PG_URL"`
 }
 
 type App struct {
