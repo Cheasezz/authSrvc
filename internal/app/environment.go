@@ -10,7 +10,6 @@ import (
 	"github.com/Cheasezz/authSrvc/pkg/logger"
 	"github.com/Cheasezz/authSrvc/pkg/pgx5"
 	"github.com/Cheasezz/authSrvc/pkg/tokens"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -21,7 +20,7 @@ var (
 type Env struct {
 	Logger   logger.Logger
 	Services core.AuthService
-	db       *pgxpool.Pool
+	db       *pgx5.Pgx5
 }
 
 func NewEnv(cfg *config.Config) (*Env, error) {
@@ -32,18 +31,18 @@ func NewEnv(cfg *config.Config) (*Env, error) {
 		return nil, errors.Join(ErrTokensNew, err)
 	}
 
-	pool, err := pgx5.New(cfg.PG.URL)
+	db, err := pgx5.New(cfg.PG.URL)
 	if err != nil {
 		return nil, errors.Join(ErrPoolNew, err)
 	}
 
-	repo := repo.New(pool)
+	repo := repo.New(db)
 
 	services := services.New(manager, repo)
 	env := Env{
 		Logger:   logger,
 		Services: services,
-		db:       pool,
+		db:       db,
 	}
 
 	return &env, nil

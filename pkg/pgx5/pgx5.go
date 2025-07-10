@@ -19,7 +19,11 @@ var (
 	ErrPing             = errors.New("error when ping db in pgx5.New")
 )
 
-func New(dbUrl string) (*pgxpool.Pool, error) {
+type Pgx5 struct {
+	Pool *pgxpool.Pool
+}
+
+func New(dbUrl string) (*Pgx5, error) {
 	var pool *pgxpool.Pool
 
 	poolConfig, err := pgxpool.ParseConfig(dbUrl)
@@ -49,5 +53,11 @@ func New(dbUrl string) (*pgxpool.Pool, error) {
 
 	log.Printf("Postgres connected, connAttempts: %d", connAttempts)
 
-	return pool, nil
+	return &Pgx5{Pool: pool}, nil
+}
+
+func (p *Pgx5) Close() {
+	if p.Pool != nil {
+		p.Pool.Close()
+	}
 }
