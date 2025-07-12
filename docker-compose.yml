@@ -4,15 +4,15 @@ services:
     container_name: my_postgres
     restart: always
     environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASS}
-      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER:-user}
+      POSTGRES_PASSWORD: ${PG_PASS:-password}
+      POSTGRES_DB: ${PG_DB:-mydb}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL","pg_isready -U user -d mydb"]
+      test: ["CMD-SHELL","pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 10s
       retries: 5
@@ -25,7 +25,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      PG_URL: "postgres://${PG_USER}:${PG_PASS}@db:5432/${PG_DB}?sslmode=disable"
+      PG_URL: "postgres://${PG_USER:-user}:${PG_PASS:-password}@db:5432/${PG_DB:-mydb}?sslmode=disable"
     ports:
       - "8080:8080"
 
