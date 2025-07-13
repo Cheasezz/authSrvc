@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -20,7 +21,8 @@ var (
 )
 
 type Pgx5 struct {
-	Pool *pgxpool.Pool
+	Pool   *pgxpool.Pool
+	Scanny *pgxscan.API
 }
 
 func New(dbUrl string) (*Pgx5, error) {

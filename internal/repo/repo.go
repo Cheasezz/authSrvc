@@ -3,7 +3,8 @@ package repo
 import "github.com/Cheasezz/authSrvc/pkg/pgx5"
 
 const (
-	usersTable = "users"
+	usersTable    = "users"
+	sessionsTable = "users_sessions"
 )
 
 type Repo struct {
