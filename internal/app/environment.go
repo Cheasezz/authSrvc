@@ -21,6 +21,7 @@ type Env struct {
 	Logger   logger.Logger
 	Services core.AuthService
 	db       *pgx5.Pgx5
+	TM       tokens.Manager
 }
 
 func NewEnv(cfg *config.Config) (*Env, error) {
@@ -43,6 +44,7 @@ func NewEnv(cfg *config.Config) (*Env, error) {
 		Logger:   logger,
 		Services: services,
 		db:       db,
+		TM:       manager,
 	}
 
 	return &env, nil

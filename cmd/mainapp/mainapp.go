@@ -17,6 +17,10 @@ import (
 // @version 1.0
 // @description API Server for Auth
 // @BasePath /
+// @securityDefinitions.apikey bearerAuth
+// @in header
+// @name Authorization
+// @description Enter the token with the `Bearer` prefix
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Error loading env variables: %s", err)

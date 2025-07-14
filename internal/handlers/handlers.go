@@ -6,6 +6,7 @@ import (
 	"github.com/Cheasezz/authSrvc/internal/app"
 	"github.com/Cheasezz/authSrvc/internal/core"
 	"github.com/Cheasezz/authSrvc/pkg/logger"
+	"github.com/Cheasezz/authSrvc/pkg/tokens"
 	"github.com/gin-gonic/gin"
 
 	_ "github.com/Cheasezz/authSrvc/docs"
@@ -16,12 +17,14 @@ import (
 type Handlers struct {
 	logger   logger.Logger
 	services core.AuthService
+	tm       tokens.Manager
 }
 
 func New(env *app.Env) *Handlers {
 	return &Handlers{
 		logger:   env.Logger,
 		services: env.Services,
+		tm:       env.TM,
 	}
 }
 
@@ -45,6 +48,7 @@ func (h *Handlers) Init(devMod bool) *gin.Engine {
 	{
 		api := router.Group("/api")
 		api.POST("/signup", h.signup)
+		api.GET("/getuserid", h.userIdentity, h.getUserId)
 	}
 
 	return router

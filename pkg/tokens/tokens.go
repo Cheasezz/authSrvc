@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrEmptySigningKey  = errors.New("empty signing key when create tokens.Manager in New")
+	ErrEmptySigningKey  = errors.New("error empty signing key when create tokens.Manager in New")
 	ErrSignedAccess     = errors.New("error when signing token in NewAccessToken")
 	ErrAccessParsing    = errors.New("error when parsing access token in ParseAccessToken")
 	ErrTypeAssertion    = errors.New("error when type assertion claims in ParseAccessToken")
@@ -16,6 +16,7 @@ var (
 	ErrGenerateRefreshT = errors.New("error when rand.Read in NewRefreshToken")
 	ErrSignedRefresh    = errors.New("error when signing token in NewRefreshToken")
 	ErrRefreshParsing   = errors.New("error when parsing refresh token in ParseRefreshToken")
+	ErrTokenExpired     = errors.New("error token expired")
 )
 
 type Manager interface {
@@ -71,6 +72,9 @@ func (m *manager) ParseAccessToken(accessTkn string) (string, error) {
 		return []byte(m.signingKey), nil
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Alg()}))
 	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return "", errors.Join(ErrTokenExpired, err)
+		}
 		return "", errors.Join(ErrAccessParsing, err)
 	}
 

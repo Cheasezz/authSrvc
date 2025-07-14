@@ -15,6 +15,38 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/getuserid": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "chek Authorization header and extract user id from claims in jwt.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "return curent user id",
+                "operationId": "getuserid",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UserIdResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.errGetUserIdResp"
+                        }
+                    }
+                }
+            }
+        },
         "/api/signup": {
             "post": {
                 "description": "create account in db and return access token in JSON and refresh token in cookies",
@@ -55,13 +87,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/handlers.badRequestResp"
+                            "$ref": "#/definitions/handlers.errBadRequestResp"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.srvrErrResp"
+                            "$ref": "#/definitions/handlers.errSignupResp"
                         }
                     }
                 }
@@ -78,7 +110,16 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.badRequestResp": {
+        "handlers.UserIdResponse": {
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA"
+                }
+            }
+        },
+        "handlers.errBadRequestResp": {
             "type": "object",
             "properties": {
                 "message": {
@@ -91,7 +132,20 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.srvrErrResp": {
+        "handlers.errGetUserIdResp": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "getUserId error: error on server side"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "handlers.errSignupResp": {
             "type": "object",
             "properties": {
                 "message": {
@@ -103,6 +157,14 @@ const docTemplate = `{
                     "example": false
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "bearerAuth": {
+            "description": "Enter the token with the ` + "`" + `Bearer: ` + "`" + ` prefix",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
