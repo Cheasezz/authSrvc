@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Cheasezz/authSrvc/internal/core"
-	"github.com/Cheasezz/authSrvc/pkg/tokens"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,15 +17,32 @@ var (
 	ErrRepoSignup   = errors.New("error when repo.Signup in Signup")
 )
 
-func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip string) (tokens.TokensPair, error) {
-	tknPair, err := s.tokenManager.NewTokensPair(userId.String())
+func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip string) (core.SignupResult, error) {
+	var tp core.SignupResult
+	sessionId := uuid.New()
+
+	claimsA := core.AccressTokenClaims{
+		SessionId: sessionId.String(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userId.String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessTTL)),
+		},
+	}
+	claimsB := core.RefreshTokenClaims{
+		SessionId: sessionId.String(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userId.String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshTTL)),
+		},
+	}
+	tknPair, err := s.tokenManager.NewTokensPair(claimsA, claimsB)
 	if err != nil {
-		return tknPair, errors.Join(ErrCreateTokens, err)
+		return tp, errors.Join(ErrCreateTokens, err)
 	}
 
 	bcryptRT, err := hashRT(tknPair.RefreshToken)
 	if err != nil {
-		return tknPair, err
+		return tp, err
 	}
 
 	sessionInfo := core.Session{
@@ -33,14 +50,19 @@ func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip s
 		RefreshToken: string(bcryptRT),
 		UserAgent:    userAgent,
 		Ip:           ip,
-		ExpriresAt:   time.Now().Add(tknPair.RefreshTokenTtl),
+		ExpriresAt:   time.Now().Add(s.refreshTTL),
 	}
 
 	err = s.repo.Signup(ctx, sessionInfo)
 	if err != nil {
-		return tknPair, errors.Join(ErrRepoSignup, err)
+		return tp, errors.Join(ErrRepoSignup, err)
 	}
-	return tknPair, nil
+	tp = core.SignupResult{
+		Access:     tknPair.AccessToken,
+		Refresh:    tknPair.RefreshToken,
+		RefreshTTL: s.refreshTTL,
+	}
+	return tp, nil
 }
 
 func hashRT(token string) (string, error) {

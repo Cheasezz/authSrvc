@@ -47,8 +47,8 @@ func (h *Handlers) signup(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refreshToken", tkns.RefreshToken, int(tkns.RefreshTokenTtl.Seconds()), "", "", false, true)
-	c.JSON(http.StatusOK, TokenResponse{AccessToken: tkns.AccessToken})
+	c.SetCookie("refreshToken", tkns.Refresh, int(tkns.RefreshTTL.Seconds()), "", "", false, true)
+	c.JSON(http.StatusOK, TokenResponse{AccessToken: tkns.Access})
 }
 
 // @Tags auth

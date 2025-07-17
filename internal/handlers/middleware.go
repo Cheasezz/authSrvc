@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Cheasezz/authSrvc/internal/apperrors"
+	"github.com/Cheasezz/authSrvc/internal/core"
 	"github.com/Cheasezz/authSrvc/pkg/tokens"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -59,11 +60,11 @@ func (m *Handlers) userIdentity(c *gin.Context) {
 		return
 	}
 
-	userId, err := m.tm.ParseAccessToken(headerParts[1])
+	userId, err := m.tm.ParseAccessToken(headerParts[1], &core.AccressTokenClaims{})
 	if err != nil {
-		if errors.Is(err, tokens.ErrTokenExpired) {
+		if errors.Is(err, tokens.ErrAccessTokenExpired) {
 			c.Status(http.StatusUnauthorized)
-			c.Error(apperrors.New(err, tokens.ErrTokenExpired))
+			c.Error(apperrors.New(err, tokens.ErrAccessTokenExpired))
 			return
 		}
 

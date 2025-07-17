@@ -27,7 +27,7 @@ type Env struct {
 func NewEnv(cfg *config.Config) (*Env, error) {
 	logger := logger.New(cfg.Log.Level)
 
-	manager, err := tokens.New(cfg.Auth.SigningKey, cfg.Auth.AccessTokenTTL, cfg.Auth.RefreshTokenTTL)
+	manager, err := tokens.New(cfg.Auth.SigningKey)
 	if err != nil {
 		return nil, errors.Join(ErrTokensNew, err)
 	}
@@ -39,7 +39,7 @@ func NewEnv(cfg *config.Config) (*Env, error) {
 
 	repo := repo.New(db)
 
-	services := services.New(manager, repo)
+	services := services.New(manager, repo, cfg.Auth.AccessTokenTTL, cfg.Auth.RefreshTokenTTL)
 	env := Env{
 		Logger:   logger,
 		Services: services,

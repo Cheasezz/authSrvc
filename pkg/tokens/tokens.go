@@ -2,61 +2,76 @@ package tokens
 
 import (
 	"errors"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 var (
-	ErrEmptySigningKey  = errors.New("error empty signing key when create tokens.Manager in New")
-	ErrSignedAccess     = errors.New("error when signing token in NewAccessToken")
-	ErrAccessParsing    = errors.New("error when parsing access token in ParseAccessToken")
-	ErrTypeAssertion    = errors.New("error when type assertion claims in ParseAccessToken")
-	ErrSubField         = errors.New("error when GetSubject from claims in ParseAccessToken")
-	ErrGenerateRefreshT = errors.New("error when rand.Read in NewRefreshToken")
-	ErrSignedRefresh    = errors.New("error when signing token in NewRefreshToken")
-	ErrRefreshParsing   = errors.New("error when parsing refresh token in ParseRefreshToken")
-	ErrTokenExpired     = errors.New("error token expired")
+	ErrEmptySigningKey     = errors.New("error empty signing key when create tokens.Manager in New")
+	ErrSignedAccess        = errors.New("error when signing token in NewAccessToken")
+	ErrAccessParsing       = errors.New("error when parsing access token in ParseAccessToken")
+	ErrTypeAssertion       = errors.New("error when type assertion claims in ParseAccessToken")
+	ErrSubField            = errors.New("error when GetSubject from claims in ParseAccessToken")
+	ErrAccessTokenExpired  = errors.New("error access token expired")
+	ErrGenerateRefreshT    = errors.New("error when rand.Read in NewRefreshToken")
+	ErrSignedRefresh       = errors.New("error when signing token in NewRefreshToken")
+	ErrRefreshParsing      = errors.New("error when parsing refresh token in ParseRefreshToken")
+	ErrRefreshTokenExpired = errors.New("error refresh token expired")
 )
 
 type Manager interface {
-	NewAccessToken(userId string) (string, error)
-	ParseAccessToken(accessTkn string) (string, error)
-	NewRefreshToken() (string, error)
-	ParseRefreshToken(refreshTkn string) (string, error)
-	NewTokensPair(userId string) (TokensPair, error)
+	// Создание jwt токена доступа. С кастомными claims
+	NewAccessToken(claims jwt.Claims) (string, error)
+
+	// Парсинг jwt токена доступа.
+	// В claims нужно передать ссылку на структуру.
+	// Вернет ссылку на jwt токен.
+	ParseAccessToken(accessTkn string, claims jwt.Claims) (*jwt.Token, error)
+
+	// Создание jwt рефреш токена. С кастомными claims
+	NewRefreshToken(claims jwt.Claims) (string, error)
+
+	// Парсинг jwt рефреш токена.
+	// В claims нужно передать ссылку на структуру.
+	// Вернет ссылку на jwt токен.
+	ParseRefreshToken(refreshTkn string, claims jwt.Claims) (*jwt.Token, error)
+
+	// Объединение создания токена доступа и рефреш токена.
+	// Вернет структур с парой токенов.
+	NewTokensPair(accessClaims, refreshClaims jwt.Claims) (TokensPair, error)
+
+	// Парсинг jwt токена доступа.
+	// В claims нужно передать ссылку на структуру.
+	// Вернет структуру с ссылками на jwt токены.
+	ParseTokenPair(tokenA, tokenR string, claimsA, claimsR jwt.Claims) (ParsedTokensPair, error)
 }
 
 type TokensPair struct {
-	AccessToken     string
-	RefreshToken    string
-	RefreshTokenTtl time.Duration
+	AccessToken  string
+	RefreshToken string
+}
+
+type ParsedTokensPair struct {
+	AccessToken  *jwt.Token
+	RefreshToken *jwt.Token
 }
 
 type manager struct {
-	signingKey    string
-	accessTknTTL  time.Duration
-	refreshTknTTL time.Duration
+	signingKey string
 }
 
-func New(signingKey string, accessTknTTL, refreshTknTTL time.Duration) (Manager, error) {
+func New(signingKey string) (Manager, error) {
 	if signingKey == "" {
 		return nil, ErrEmptySigningKey
 	}
 
 	return &manager{
 		signingKey,
-		accessTknTTL,
-		refreshTknTTL,
 	}, nil
 }
 
-// Создание jwt токена доступа. Стандартные claims, решил, что кастомные будут излишком
-func (m *manager) NewAccessToken(userId string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
-		"sub": userId,
-		"exp": time.Now().Add(m.accessTknTTL).Unix(),
-	})
+func (m *manager) NewAccessToken(claims jwt.Claims) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 
 	signedTkn, err := token.SignedString([]byte(m.signingKey))
 	if err != nil {
@@ -66,34 +81,22 @@ func (m *manager) NewAccessToken(userId string) (string, error) {
 	return signedTkn, nil
 }
 
-// Парсинг jwt токена доступа. Вернет содержимое поле sub из claims.
-func (m *manager) ParseAccessToken(accessTkn string) (string, error) {
-	token, err := jwt.Parse(accessTkn, func(t *jwt.Token) (any, error) {
+func (m *manager) ParseAccessToken(token string, claims jwt.Claims) (*jwt.Token, error) {
+	tkn, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (any, error) {
 		return []byte(m.signingKey), nil
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Alg()}))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return "", errors.Join(ErrTokenExpired, err)
+			return &jwt.Token{}, errors.Join(ErrAccessTokenExpired, err)
 		}
-		return "", errors.Join(ErrAccessParsing, err)
+		return &jwt.Token{}, errors.Join(ErrAccessParsing, err)
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		userId, err := claims.GetSubject()
-		if err != nil {
-			return "", errors.Join(ErrSubField, err)
-		}
-		return userId, nil
-	} else {
-		return "", errors.Join(ErrTypeAssertion, err)
-	}
+	return tkn, nil
 }
 
-// Создание jwt рефреш токена. Вернет подписанный токен
-func (m *manager) NewRefreshToken() (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"exp": time.Now().Add(m.refreshTknTTL).Unix(),
-	})
+func (m *manager) NewRefreshToken(claims jwt.Claims) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	signedTkn, err := token.SignedString([]byte(m.signingKey))
 	if err != nil {
@@ -103,29 +106,46 @@ func (m *manager) NewRefreshToken() (string, error) {
 	return signedTkn, nil
 }
 
-// Парсинг jwt рефреш токена. Проверит и вернет токен.
-func (m *manager) ParseRefreshToken(refreshTkn string) (string, error) {
-	token, err := jwt.Parse(refreshTkn, func(t *jwt.Token) (any, error) {
+func (m *manager) ParseRefreshToken(token string, claims jwt.Claims) (*jwt.Token, error) {
+	tkn, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (any, error) {
 		return []byte(m.signingKey), nil
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
-		return "", errors.Join(ErrRefreshParsing, err)
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return &jwt.Token{}, errors.Join(ErrRefreshTokenExpired, err)
+		}
+		return &jwt.Token{}, errors.Join(ErrRefreshParsing, err)
 	}
-	return token.Raw, nil
+	return tkn, nil
 }
 
-// Объединение создания токена доступа и рефреш токена.
-// Вернет структур с парой токенов.
-func (m *manager) NewTokensPair(userId string) (TokensPair, error) {
-	accessT, err := m.NewAccessToken(userId)
+func (m *manager) NewTokensPair(claimsA, claimsR jwt.Claims) (TokensPair, error) {
+	accessT, err := m.NewAccessToken(claimsA)
 	if err != nil {
 		return TokensPair{}, err
 	}
 
-	refreshT, err := m.NewRefreshToken()
+	refreshT, err := m.NewRefreshToken(claimsR)
 	if err != nil {
 		return TokensPair{}, err
 	}
 
-	return TokensPair{accessT, refreshT, m.refreshTknTTL}, nil
+	return TokensPair{accessT, refreshT}, nil
+}
+
+func (m *manager) ParseTokenPair(
+	tokenA, tokenR string,
+	claimsA, claimsR jwt.Claims,
+) (ParsedTokensPair, error) {
+	accessT, err := m.ParseAccessToken(tokenA, claimsA)
+	if err != nil {
+		return ParsedTokensPair{}, err
+	}
+
+	refreshT, err := m.ParseRefreshToken(tokenR, claimsR)
+	if err != nil {
+		return ParsedTokensPair{}, err
+	}
+
+	return ParsedTokensPair{accessT, refreshT}, nil
 }
