@@ -39,7 +39,14 @@ func NewEnv(cfg *config.Config) (*Env, error) {
 
 	repo := repo.New(db)
 
-	services := services.New(manager, repo, cfg.Auth.AccessTokenTTL, cfg.Auth.RefreshTokenTTL)
+	services := services.New(
+		manager,
+		repo,
+		logger,
+		cfg.Auth.AccessTokenTTL,
+		cfg.Auth.RefreshTokenTTL,
+		cfg.App.WebhookUrl,
+	)
 	env := Env{
 		Logger:   logger,
 		Services: services,

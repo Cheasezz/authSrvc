@@ -10,10 +10,7 @@ var (
 	ErrEmptySigningKey     = errors.New("error empty signing key when create tokens.Manager in New")
 	ErrSignedAccess        = errors.New("error when signing token in NewAccessToken")
 	ErrAccessParsing       = errors.New("error when parsing access token in ParseAccessToken")
-	ErrTypeAssertion       = errors.New("error when type assertion claims in ParseAccessToken")
-	ErrSubField            = errors.New("error when GetSubject from claims in ParseAccessToken")
 	ErrAccessTokenExpired  = errors.New("error access token expired")
-	ErrGenerateRefreshT    = errors.New("error when rand.Read in NewRefreshToken")
 	ErrSignedRefresh       = errors.New("error when signing token in NewRefreshToken")
 	ErrRefreshParsing      = errors.New("error when parsing refresh token in ParseRefreshToken")
 	ErrRefreshTokenExpired = errors.New("error refresh token expired")
@@ -26,6 +23,7 @@ type Manager interface {
 	// Парсинг jwt токена доступа.
 	// В claims нужно передать ссылку на структуру.
 	// Вернет ссылку на jwt токен.
+	// Если токен просрочен, то вренет ссылку на токен и ошибку.
 	ParseAccessToken(accessTkn string, claims jwt.Claims) (*jwt.Token, error)
 
 	// Создание jwt рефреш токена. С кастомными claims
@@ -87,7 +85,7 @@ func (m *manager) ParseAccessToken(token string, claims jwt.Claims) (*jwt.Token,
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Alg()}))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return &jwt.Token{}, errors.Join(ErrAccessTokenExpired, err)
+			return tkn, errors.Join(ErrAccessTokenExpired, err)
 		}
 		return &jwt.Token{}, errors.Join(ErrAccessParsing, err)
 	}

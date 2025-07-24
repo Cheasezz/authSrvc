@@ -35,7 +35,8 @@ type PG struct {
 }
 
 type App struct {
-	DevMod bool `env-required:"false" yaml:"dev_mod" env:"MOD"`
+	DevMod     bool   `env-required:"false" yaml:"dev_mod" env:"MOD"`
+	WebhookUrl string `env-required:"false" yaml:"webhook_url" env:"WEBHOOK_URL"`
 }
 
 func NewConfig() (*Config, error) {

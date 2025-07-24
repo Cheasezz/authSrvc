@@ -47,7 +47,7 @@ func (h *Handlers) signup(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refreshToken", tkns.Refresh, int(tkns.RefreshTTL.Seconds()), "", "", false, true)
+	c.SetCookie(refreshTknCookie, tkns.Refresh, int(tkns.RefreshTTL.Seconds()), "", "", false, true)
 	c.JSON(http.StatusOK, TokenResponse{AccessToken: tkns.Access})
 }
 
@@ -60,9 +60,9 @@ func (h *Handlers) signup(c *gin.Context) {
 // @Success 200 {object} UserIdResponse
 // @Failure 500 {object} errGetUserIdResp
 // @Security		bearerAuth
-// @Router 	/api/getuserid [get]
+// @Router 	/api/protected/getuserid [get]
 func (h *Handlers) getUserId(c *gin.Context) {
-	userId, err := getUserCtx(c)
+	userId, err := getUserIdCtx(c)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		c.Error(apperrors.New(err, ErrGetUserId))
@@ -71,4 +71,25 @@ func (h *Handlers) getUserId(c *gin.Context) {
 
 	c.JSON(http.StatusOK, UserIdResponse{UserId: userId.String()})
 
+}
+
+func (h *Handlers) refresh(c *gin.Context) {
+	sessionId, err := getSessionIdCtx(c)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		c.Error(apperrors.New(err, ErrAuth))
+		return
+	}
+
+	refreshT, err := getRefreshTknCtx(c)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		c.Error(apperrors.New(err, ErrAuth))
+		return
+	}
+
+	ua := c.Request.UserAgent()
+	ip := c.ClientIP()
+
+	h.services.Refresh(c, refreshT, sessionId, ua, ip)
 }

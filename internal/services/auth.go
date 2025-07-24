@@ -1,9 +1,12 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/Cheasezz/authSrvc/internal/core"
@@ -13,15 +16,19 @@ import (
 )
 
 var (
-	ErrCreateTokens = errors.New("error when create tokenst pair in Signup")
-	ErrRepoSignup   = errors.New("error when repo.Signup in Signup")
+	ErrCreateTokens      = errors.New("error when create tokenst pair in Signup")
+	ErrRepoSignup        = errors.New("error when repo.Signup in Signup")
+	ErrRefresh           = errors.New("error in Refresh")
+	ErrTokenshashCompare = errors.New("error when compare tokens hash in Refresh")
+	ErrUserAgent         = errors.New("error when compare user agent in Refresh (not equal)")
+	ErrWebhookStatusCode = errors.New("error webhook returned not 2xx status code")
 )
 
-func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip string) (core.SignupResult, error) {
-	var tp core.SignupResult
+func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*core.TokenPairResult, error) {
+	var tp core.TokenPairResult
 	sessionId := uuid.New()
 
-	claimsA := core.AccressTokenClaims{
+	claimsA := core.AccessTokenClaims{
 		SessionId: sessionId.String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userId.String(),
@@ -37,32 +44,33 @@ func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip s
 	}
 	tknPair, err := s.tokenManager.NewTokensPair(claimsA, claimsB)
 	if err != nil {
-		return tp, errors.Join(ErrCreateTokens, err)
+		return nil, errors.Join(ErrCreateTokens, err)
 	}
 
 	bcryptRT, err := hashRT(tknPair.RefreshToken)
 	if err != nil {
-		return tp, err
+		return nil, err
 	}
 
 	sessionInfo := core.Session{
-		UserId:       userId,
-		RefreshToken: string(bcryptRT),
-		UserAgent:    userAgent,
-		Ip:           ip,
-		ExpriresAt:   time.Now().Add(s.refreshTTL),
+		Id:               sessionId,
+		UserId:           userId,
+		RefreshTokenHash: string(bcryptRT),
+		UserAgent:        userAgent,
+		Ip:               ip,
+		ExpriresAt:       time.Now().Add(s.refreshTTL),
 	}
 
 	err = s.repo.Signup(ctx, sessionInfo)
 	if err != nil {
-		return tp, errors.Join(ErrRepoSignup, err)
+		return nil, errors.Join(ErrRepoSignup, err)
 	}
-	tp = core.SignupResult{
+	tp = core.TokenPairResult{
 		Access:     tknPair.AccessToken,
 		Refresh:    tknPair.RefreshToken,
 		RefreshTTL: s.refreshTTL,
 	}
-	return tp, nil
+	return &tp, nil
 }
 
 func hashRT(token string) (string, error) {
@@ -79,9 +87,91 @@ func hashRT(token string) (string, error) {
 	return string(bcryptRT), nil
 }
 
-func compareHashRT(token, hash string) bool {
+func compareHashRT(token, hash string) error {
 	hashRT := sha256.Sum256([]byte(token))
 
 	err := bcrypt.CompareHashAndPassword([]byte(hash), hashRT[:])
-	return err == nil
+	if err != nil {
+		return ErrTokenshashCompare
+	}
+
+	return nil
+}
+
+// При обновлении токенов сравниваем данные из окружения пользователя.
+// Если все корректно, то удаляем старую сессию, и создаем новую, с новыми токенами.
+func (s *services) Refresh(ctx context.Context, refreshTkn, sessionId, userAgent, ip string) (*core.TokenPairResult, error) {
+	session, err := s.repo.GetSessionById(ctx, sessionId)
+	if err != nil {
+		return nil, errors.Join(ErrRefresh, err)
+	}
+
+	// Если юзер агент не совпадает,
+	// то деавторизуем пользователя, удаляя сессию из бд.
+	if userAgent != session.UserAgent {
+		err := s.repo.DeleteSessionById(ctx, sessionId)
+		if err != nil {
+			return nil, errors.Join(ErrRefresh, err)
+		}
+		return nil, ErrUserAgent
+	}
+
+	if err := compareHashRT(refreshTkn, session.RefreshTokenHash); err != nil {
+		return nil, errors.Join(ErrRefresh, err)
+	}
+
+	// При попытке обновления токена с нового ip,
+	// делаем не блокирующий post зарос на вебхук.
+	if ip != session.Ip {
+		go func() {
+			err := s.sendWebhook(core.RefreshChangeIpPayload{
+				SessionId: sessionId,
+				UserId:    session.UserId.String(),
+				OldIp:     session.Ip,
+				NewIp:     ip,
+				Timestamp: time.Now(),
+			})
+			if err != nil {
+				s.log.Info("Webhook alert:%s", err)
+			}
+		}()
+	}
+
+	err = s.repo.DeleteSessionById(ctx, sessionId)
+	if err != nil {
+		return nil, errors.Join(ErrRefresh, err)
+	}
+
+	newTokens, err := s.Signup(ctx, session.UserId, userAgent, ip)
+	if err != nil {
+		return nil, errors.Join(ErrRefresh, err)
+	}
+
+	return newTokens, nil
+}
+
+func (s *services) sendWebhook(payload core.RefreshChangeIpPayload) error {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, s.webhookUrl, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		return ErrWebhookStatusCode
+	}
+
+	return nil
 }
