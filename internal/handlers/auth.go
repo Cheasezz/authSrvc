@@ -26,8 +26,8 @@ var (
 // @Header 	200 {string} Set-Cookie "JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
 // @Failure 400 {object} errBadRequestResp
 // @Failure 500 {object} errSignupResp
-// @Router 	/api/signup [post]
-func (h *Handlers) signup(c *gin.Context) {
+// @Router 	/session [post]
+func (h *Handlers) tokenIssuance(c *gin.Context) {
 	id := c.Query("uuid")
 	uuid, err := uuid.Parse(id)
 	if err != nil {
@@ -39,7 +39,7 @@ func (h *Handlers) signup(c *gin.Context) {
 	ua := c.Request.UserAgent()
 	ip := c.ClientIP()
 
-	tkns, err := h.services.Signup(c, uuid, ua, ip)
+	tkns, err := h.services.IssueTokens(c, uuid, ua, ip)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		c.Error(apperrors.New(err, ErrSignup))
@@ -60,8 +60,8 @@ func (h *Handlers) signup(c *gin.Context) {
 // @Success 200 {object} UserIdResponse
 // @Failure 500 {object} errGetUserIdResp
 // @Security		bearerAuth
-// @Router 	/api/protected/getuserid [get]
-func (h *Handlers) getUserId(c *gin.Context) {
+// @Router 	/session/me [get]
+func (h *Handlers) me(c *gin.Context) {
 	userId, err := getUserIdCtx(c)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)

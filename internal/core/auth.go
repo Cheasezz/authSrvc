@@ -10,12 +10,12 @@ import (
 
 // TODO: поменять названия, возвращать ссылки.
 type AuthService interface {
-	Signup(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*TokenPairResult, error)
+	IssueTokens(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*TokenPairResult, error)
 	Refresh(ctx context.Context, refreshTkn, sessionId, userAgent, ip string) (*TokenPairResult, error)
 }
 
 type AuthRepo interface {
-	Signup(ctx context.Context, session Session) error
+	CreateSession(ctx context.Context, session *Session) error
 	GetSessionById(ctx context.Context, sessionId string) (*Session, error)
 	DeleteSessionById(ctx context.Context, sessionId string) error
 }

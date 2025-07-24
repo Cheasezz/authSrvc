@@ -45,13 +45,13 @@ func (h *Handlers) Init(devMod bool) *gin.Engine {
 		})
 	})
 
-	api := router.Group("/api")
+	session := router.Group("/session")
 	{
-		api.POST("/signup", h.signup)
+		session.POST("/", h.tokenIssuance)
 
-		protected := api.Group("/protected", extractAccessToken)
+		protected := session.Group("/", extractAccessToken)
 		{
-			protected.GET("/getuserid", h.checkUserAccess, h.getUserId)
+			protected.GET("/me", h.checkUserAccess, h.me)
 			protected.POST("/refresh", extractRefreshToken, h.checkTokenPair, h.refresh)
 
 		}

@@ -24,7 +24,7 @@ var (
 	ErrWebhookStatusCode = errors.New("error webhook returned not 2xx status code")
 )
 
-func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*core.TokenPairResult, error) {
+func (s *services) IssueTokens(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*core.TokenPairResult, error) {
 	var tp core.TokenPairResult
 	sessionId := uuid.New()
 
@@ -61,7 +61,7 @@ func (s *services) Signup(ctx context.Context, userId uuid.UUID, userAgent, ip s
 		ExpriresAt:       time.Now().Add(s.refreshTTL),
 	}
 
-	err = s.repo.Signup(ctx, sessionInfo)
+	err = s.repo.CreateSession(ctx, &sessionInfo)
 	if err != nil {
 		return nil, errors.Join(ErrRepoSignup, err)
 	}
@@ -124,7 +124,7 @@ func (s *services) Refresh(ctx context.Context, refreshTkn, sessionId, userAgent
 	// делаем не блокирующий post зарос на вебхук.
 	if ip != session.Ip {
 		go func() {
-			err := s.sendWebhook(core.RefreshChangeIpPayload{
+			err := s.sendWebhook(&core.RefreshChangeIpPayload{
 				SessionId: sessionId,
 				UserId:    session.UserId.String(),
 				OldIp:     session.Ip,
@@ -142,7 +142,7 @@ func (s *services) Refresh(ctx context.Context, refreshTkn, sessionId, userAgent
 		return nil, errors.Join(ErrRefresh, err)
 	}
 
-	newTokens, err := s.Signup(ctx, session.UserId, userAgent, ip)
+	newTokens, err := s.IssueTokens(ctx, session.UserId, userAgent, ip)
 	if err != nil {
 		return nil, errors.Join(ErrRefresh, err)
 	}
@@ -150,7 +150,7 @@ func (s *services) Refresh(ctx context.Context, refreshTkn, sessionId, userAgent
 	return newTokens, nil
 }
 
-func (s *services) sendWebhook(payload core.RefreshChangeIpPayload) error {
+func (s *services) sendWebhook(payload *core.RefreshChangeIpPayload) error {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return err

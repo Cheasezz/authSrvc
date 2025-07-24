@@ -14,7 +14,7 @@ var (
 	ErrDeleteSessionById = errors.New("error when Exec in DeleteSessionById")
 )
 
-func (r *Repo) Signup(ctx context.Context, session core.Session) error {
+func (r *Repo) CreateSession(ctx context.Context, session *core.Session) error {
 	tx, err := r.DB.Pool.Begin(ctx)
 	if err != nil {
 		return err
