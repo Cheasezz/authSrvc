@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	ErrCreateTokens      = errors.New("error when create tokenst pair in Signup")
-	ErrRepoSignup        = errors.New("error when repo.Signup in Signup")
+	ErrCreateTokens      = errors.New("error when create tokens pair in IssueTokens")
+	ErrRepoSignup        = errors.New("error when repo.CreateSession in IssueTokens")
 	ErrRefresh           = errors.New("error in Refresh")
 	ErrTokenshashCompare = errors.New("error when compare tokens hash in Refresh")
 	ErrUserAgent         = errors.New("error when compare user agent in Refresh (not equal)")
