@@ -9,28 +9,18 @@ import (
 )
 
 var (
-	ErrSignUp            = errors.New("error when Exec query in Signup")
+	ErrSignUp            = errors.New("error when Exec query in CreateSession")
 	ErrGetSessionById    = errors.New("error when Get in GetSessionById")
 	ErrDeleteSessionById = errors.New("error when Exec in DeleteSessionById")
 )
 
 func (r *Repo) CreateSession(ctx context.Context, session *core.Session) error {
-	tx, err := r.DB.Pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
 
-	query := fmt.Sprintf(`INSERT INTO %s (id) values ($1)`, usersTable)
-	_, err = tx.Exec(ctx, query, session.UserId)
-	if err != nil {
-		return errors.Join(ErrSignUp, err)
-	}
+	query := fmt.Sprintf(`INSERT INTO %s
+		(id,user_id,refresh_token_hash,user_agent,ip,expires_at)
+		values ($1,$2,$3,$4,$5,$6)`, sessionsTable)
 
-	query = fmt.Sprintf(`INSERT INTO %s
-		(id,user_id,refresh_token,user_agent,ip,expires_at)
-		values ($1,$2,$3,$4,$5)`, sessionsTable)
-	_, err = tx.Exec(
+	_, err := r.DB.Pool.Exec(
 		ctx,
 		query,
 		session.Id,
@@ -44,15 +34,22 @@ func (r *Repo) CreateSession(ctx context.Context, session *core.Session) error {
 		return errors.Join(ErrSignUp, err)
 	}
 
-	return tx.Commit(ctx)
+	return nil
 }
 
 func (r *Repo) GetSessionById(ctx context.Context, sessionId string) (*core.Session, error) {
 	var session core.Session
 
-	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1 `, sessionsTable)
+	query := fmt.Sprintf(`SELECT 
+	id,
+	user_id,
+	refresh_token_hash,
+	user_agent,
+	ip::text,
+	created_at,
+	expires_at FROM %s WHERE id = $1 `, sessionsTable)
 
-	err := r.DB.Scanny.Get(ctx, r.DB.Pool, &session, query, sessionId)
+	err := r.DB.Scany.Get(ctx, r.DB.Pool, &session, query, sessionId)
 	if err != nil {
 		return nil, ErrGetSessionById
 	}

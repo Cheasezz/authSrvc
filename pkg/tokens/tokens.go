@@ -36,12 +36,13 @@ type Manager interface {
 
 	// Объединение создания токена доступа и рефреш токена.
 	// Вернет структур с парой токенов.
-	NewTokensPair(accessClaims, refreshClaims jwt.Claims) (TokensPair, error)
+	NewTokensPair(accessClaims, refreshClaims jwt.Claims) (*TokensPair, error)
 
-	// Парсинг jwt токена доступа.
+	// Парсинг jwt токена доступа и рефреш токена.
+	// В данном случае истекший токен доступа не считается ошибкой.
 	// В claims нужно передать ссылку на структуру.
 	// Вернет структуру с ссылками на jwt токены.
-	ParseTokenPair(tokenA, tokenR string, claimsA, claimsR jwt.Claims) (ParsedTokensPair, error)
+	ParseTokenPair(tokenA, tokenR string, claimsA, claimsR jwt.Claims) (*ParsedTokensPair, error)
 }
 
 type TokensPair struct {
@@ -87,7 +88,7 @@ func (m *manager) ParseAccessToken(token string, claims jwt.Claims) (*jwt.Token,
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			return tkn, errors.Join(ErrAccessTokenExpired, err)
 		}
-		return &jwt.Token{}, errors.Join(ErrAccessParsing, err)
+		return nil, errors.Join(ErrAccessParsing, err)
 	}
 
 	return tkn, nil
@@ -110,40 +111,40 @@ func (m *manager) ParseRefreshToken(token string, claims jwt.Claims) (*jwt.Token
 	}, jwt.WithExpirationRequired(), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return &jwt.Token{}, errors.Join(ErrRefreshTokenExpired, err)
+			return nil, errors.Join(ErrRefreshTokenExpired, err)
 		}
-		return &jwt.Token{}, errors.Join(ErrRefreshParsing, err)
+		return nil, errors.Join(ErrRefreshParsing, err)
 	}
 	return tkn, nil
 }
 
-func (m *manager) NewTokensPair(claimsA, claimsR jwt.Claims) (TokensPair, error) {
+func (m *manager) NewTokensPair(claimsA, claimsR jwt.Claims) (*TokensPair, error) {
 	accessT, err := m.NewAccessToken(claimsA)
 	if err != nil {
-		return TokensPair{}, err
+		return nil, err
 	}
 
 	refreshT, err := m.NewRefreshToken(claimsR)
 	if err != nil {
-		return TokensPair{}, err
+		return nil, err
 	}
 
-	return TokensPair{accessT, refreshT}, nil
+	return &TokensPair{accessT, refreshT}, nil
 }
 
 func (m *manager) ParseTokenPair(
 	tokenA, tokenR string,
 	claimsA, claimsR jwt.Claims,
-) (ParsedTokensPair, error) {
+) (*ParsedTokensPair, error) {
 	accessT, err := m.ParseAccessToken(tokenA, claimsA)
-	if err != nil {
-		return ParsedTokensPair{}, err
+	if err != nil && !errors.Is(err, ErrAccessTokenExpired) {
+		return nil, err
 	}
 
 	refreshT, err := m.ParseRefreshToken(tokenR, claimsR)
 	if err != nil {
-		return ParsedTokensPair{}, err
+		return nil, err
 	}
 
-	return ParsedTokensPair{accessT, refreshT}, nil
+	return &ParsedTokensPair{accessT, refreshT}, nil
 }

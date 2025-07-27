@@ -47,9 +47,9 @@ func (h *Handlers) Init(devMod bool) *gin.Engine {
 
 	session := router.Group("/session")
 	{
-		session.POST("/", h.tokenIssuance)
+		session.POST("", h.tokenIssuance)
 
-		protected := session.Group("/", extractAccessToken)
+		protected := session.Group("", extractAccessToken)
 		{
 			protected.GET("/me", h.checkUserAccess, h.me)
 			protected.POST("/refresh", extractRefreshToken, h.checkTokenPair, h.refresh)

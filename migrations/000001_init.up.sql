@@ -1,11 +1,6 @@
-CREATE TABLE IF NOT EXISTS users(
-  id         UUID        PRIMARY KEY,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 CREATE TABLE IF NOT EXISTS users_sessions(
   id                  UUID          PRIMARY KEY,
-  user_id             UUID          REFERENCES users (id) ON DELETE CASCADE NOT NULL,
+  user_id             UUID          NOT NULL,
   refresh_token_hash  TEXT          UNIQUE                NOT NULL,
   user_agent          TEXT          NOT NULL,
   ip                  INET          NOT NULL,

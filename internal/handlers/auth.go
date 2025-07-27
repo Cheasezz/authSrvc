@@ -10,22 +10,23 @@ import (
 )
 
 var (
-	ErrUncorrectUuid = errors.New("signup error: uncorrect uuid")
-	ErrSignup        = errors.New("signup errror: error on server side or user already exist")
-	ErrGetUserId     = errors.New("getUserId error: error on server side")
+	ErrUncorrectUuid = errors.New("create session error: uncorrect uuid")
+	ErrTokenIssuance = errors.New("create session error: error on server side or user already exist")
+	ErrGetUserId     = errors.New("me error: error on server side")
 )
 
 // @Tags auth
-// @Summary create account
-// @Description create account in db and return access token in JSON and refresh token in cookies
-// @ID create-account
+// @Summary create session
+// @Description create session in db with ip and user agent.
+// Return access token in JSON and refresh token in cookies
+// @ID create-session
 // @Accept  json
 // @Produce json
 // @Param 	uuid query string true "User uuid" example(fb62aa81-1172-4c73-8fc3-cd5a446346bf)
 // @Success 200 {object} TokenResponse
 // @Header 	200 {string} Set-Cookie "JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
 // @Failure 400 {object} errBadRequestResp
-// @Failure 500 {object} errSignupResp
+// @Failure 500 {object} errTokenIssuanceResp
 // @Router 	/session [post]
 func (h *Handlers) tokenIssuance(c *gin.Context) {
 	id := c.Query("uuid")
@@ -42,23 +43,21 @@ func (h *Handlers) tokenIssuance(c *gin.Context) {
 	tkns, err := h.services.IssueTokens(c, uuid, ua, ip)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
-		c.Error(apperrors.New(err, ErrSignup))
+		c.Error(apperrors.New(err, ErrTokenIssuance))
 		return
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(refreshTknCookie, tkns.Refresh, int(tkns.RefreshTTL.Seconds()), "", "", false, true)
-	c.JSON(http.StatusOK, TokenResponse{AccessToken: tkns.Access})
+	newTokensResponse(c, tkns)
 }
 
 // @Tags auth
 // @Summary return curent user id
 // @Description chek Authorization header and extract user id from claims in jwt.
 // Set user id in gin context and return json with user id.
-// @ID getuserid
+// @ID me
 // @Produce  json
-// @Success 200 {object} UserIdResponse
-// @Failure 500 {object} errGetUserIdResp
+// @Success 200 {object} MeResponse
+// @Failure 500 {object} errMeResp
 // @Security		bearerAuth
 // @Router 	/session/me [get]
 func (h *Handlers) me(c *gin.Context) {
@@ -69,10 +68,26 @@ func (h *Handlers) me(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, UserIdResponse{UserId: userId.String()})
+	c.JSON(http.StatusOK, MeResponse{UserId: userId.String()})
 
 }
 
+// @Tags auth
+// @Summary refresh session
+// @Description check access and refresh tokens.
+// Abort request if user agent not like in db and delete session from db.
+// Send post request on webhook if ip not like in db.
+// If everything ok, then delete old session from db and generete new with new tokens.
+// @ID refresh-session
+// @Accept  json
+// @Produce json
+// @Param Cookie header string true "Refersh token cooliee"
+// @Success 200 {object} TokenResponse
+// @Header 	200 {string} Set-Cookie "JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
+// @Failure 400 {object} errBadRequestResp
+// @Failure 500 {object} errTokenIssuanceResp
+// @Security		bearerAuth
+// @Router 	/session/refresh [post]
 func (h *Handlers) refresh(c *gin.Context) {
 	sessionId, err := getSessionIdCtx(c)
 	if err != nil {
@@ -91,5 +106,12 @@ func (h *Handlers) refresh(c *gin.Context) {
 	ua := c.Request.UserAgent()
 	ip := c.ClientIP()
 
-	h.services.Refresh(c, refreshT, sessionId, ua, ip)
+	tkns, err := h.services.Refresh(c, refreshT, sessionId, ua, ip)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Error(apperrors.New(err, ErrTokenIssuance))
+		return
+	}
+
+	newTokensResponse(c, tkns)
 }

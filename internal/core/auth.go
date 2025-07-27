@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: поменять названия, возвращать ссылки.
 type AuthService interface {
 	IssueTokens(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*TokenPairResult, error)
 	Refresh(ctx context.Context, refreshTkn, sessionId, userAgent, ip string) (*TokenPairResult, error)

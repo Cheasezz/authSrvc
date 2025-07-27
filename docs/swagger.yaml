@@ -1,39 +1,39 @@
 basePath: /
 definitions:
+  handlers.MeResponse:
+    properties:
+      userId:
+        example: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA
+        type: string
+    type: object
   handlers.TokenResponse:
     properties:
       access:
         example: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA
         type: string
     type: object
-  handlers.UserIdResponse:
-    properties:
-      userId:
-        example: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA
-        type: string
-    type: object
   handlers.errBadRequestResp:
     properties:
       message:
-        example: 'signup error: uncorrect uuid'
+        example: 'create session: error: uncorrect uuid'
         type: string
       success:
         example: false
         type: boolean
     type: object
-  handlers.errGetUserIdResp:
+  handlers.errMeResp:
     properties:
       message:
-        example: 'getUserId error: error on server side'
+        example: 'me error: error on server side'
         type: string
       success:
         example: false
         type: boolean
     type: object
-  handlers.errSignupResp:
+  handlers.errTokenIssuanceResp:
     properties:
       message:
-        example: 'signup errror: error on server side or user already exist'
+        example: 'create session error: error on server side or user already exist'
         type: string
       success:
         example: false
@@ -45,33 +45,12 @@ info:
   title: Auth server API
   version: "1.0"
 paths:
-  /api/getuserid:
-    get:
-      description: chek Authorization header and extract user id from claims in jwt.
-      operationId: getuserid
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.UserIdResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.errGetUserIdResp'
-      security:
-      - bearerAuth: []
-      summary: return curent user id
-      tags:
-      - auth
-  /api/signup:
+  /session:
     post:
       consumes:
       - application/json
-      description: create account in db and return access token in JSON and refresh
-        token in cookies
-      operationId: create-account
+      description: create session in db with ip and user agent.
+      operationId: create-session
       parameters:
       - description: User uuid
         example: fb62aa81-1172-4c73-8fc3-cd5a446346bf
@@ -98,13 +77,70 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handlers.errSignupResp'
-      summary: create account
+            $ref: '#/definitions/handlers.errTokenIssuanceResp'
+      summary: create session
+      tags:
+      - auth
+  /session/me:
+    get:
+      description: chek Authorization header and extract user id from claims in jwt.
+      operationId: me
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MeResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.errMeResp'
+      security:
+      - bearerAuth: []
+      summary: return curent user id
+      tags:
+      - auth
+  /session/refresh:
+    post:
+      consumes:
+      - application/json
+      description: check access and refresh tokens.
+      operationId: refresh-session
+      parameters:
+      - description: Refersh token cooliee
+        in: header
+        name: Cookie
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: 'JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21;
+                Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None'
+              type: string
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.errBadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.errTokenIssuanceResp'
+      security:
+      - bearerAuth: []
+      summary: refresh session
       tags:
       - auth
 securityDefinitions:
   bearerAuth:
-    description: 'Enter the token with the `Bearer: ` prefix'
+    description: Enter the token with the `Bearer` prefix
     in: header
     name: Authorization
     type: apiKey

@@ -15,41 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/getuserid": {
-            "get": {
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "description": "chek Authorization header and extract user id from claims in jwt.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "return curent user id",
-                "operationId": "getuserid",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.UserIdResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.errGetUserIdResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/signup": {
+        "/session": {
             "post": {
-                "description": "create account in db and return access token in JSON and refresh token in cookies",
+                "description": "create session in db with ip and user agent.",
                 "consumes": [
                     "application/json"
                 ],
@@ -59,8 +27,8 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "create account",
-                "operationId": "create-account",
+                "summary": "create session",
+                "operationId": "create-session",
                 "parameters": [
                     {
                         "type": "string",
@@ -93,7 +61,95 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.errSignupResp"
+                            "$ref": "#/definitions/handlers.errTokenIssuanceResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/me": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "chek Authorization header and extract user id from claims in jwt.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "return curent user id",
+                "operationId": "me",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MeResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.errMeResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/refresh": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "check access and refresh tokens.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "refresh session",
+                "operationId": "refresh-session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Refersh token cooliee",
+                        "name": "Cookie",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TokenResponse"
+                        },
+                        "headers": {
+                            "Set-Cookie": {
+                                "type": "string",
+                                "description": "JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.errBadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.errTokenIssuanceResp"
                         }
                     }
                 }
@@ -101,19 +157,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.TokenResponse": {
+        "handlers.MeResponse": {
             "type": "object",
             "properties": {
-                "access": {
+                "userId": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA"
                 }
             }
         },
-        "handlers.UserIdResponse": {
+        "handlers.TokenResponse": {
             "type": "object",
             "properties": {
-                "userId": {
+                "access": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA"
                 }
@@ -124,7 +180,7 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "signup error: uncorrect uuid"
+                    "example": "create session: error: uncorrect uuid"
                 },
                 "success": {
                     "type": "boolean",
@@ -132,12 +188,12 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.errGetUserIdResp": {
+        "handlers.errMeResp": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "getUserId error: error on server side"
+                    "example": "me error: error on server side"
                 },
                 "success": {
                     "type": "boolean",
@@ -145,12 +201,12 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.errSignupResp": {
+        "handlers.errTokenIssuanceResp": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "signup errror: error on server side or user already exist"
+                    "example": "create session error: error on server side or user already exist"
                 },
                 "success": {
                     "type": "boolean",
@@ -161,7 +217,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "bearerAuth": {
-            "description": "Enter the token with the ` + "`" + `Bearer: ` + "`" + ` prefix",
+            "description": "Enter the token with the ` + "`" + `Bearer` + "`" + ` prefix",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

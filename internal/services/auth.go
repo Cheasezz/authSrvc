@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"time"
 
@@ -120,9 +121,16 @@ func (s *services) Refresh(ctx context.Context, refreshTkn, sessionId, userAgent
 		return nil, errors.Join(ErrRefresh, err)
 	}
 
+	// У меня ip в БД - это тип inet, он храниться с маской.
+	// Перед сравнением нужео убрать маску.
+	parsIp, _, err := net.ParseCIDR(session.Ip)
+	if err != nil {
+		return nil, err
+	}
+
 	// При попытке обновления токена с нового ip,
 	// делаем не блокирующий post зарос на вебхук.
-	if ip != session.Ip {
+	if ip != parsIp.String() {
 		go func() {
 			err := s.sendWebhook(&core.RefreshChangeIpPayload{
 				SessionId: sessionId,

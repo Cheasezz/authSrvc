@@ -21,8 +21,8 @@ var (
 )
 
 type Pgx5 struct {
-	Pool   *pgxpool.Pool
-	Scanny *pgxscan.API
+	Pool  *pgxpool.Pool
+	Scany *pgxscan.API
 }
 
 func New(dbUrl string) (*Pgx5, error) {
@@ -32,6 +32,12 @@ func New(dbUrl string) (*Pgx5, error) {
 	if err != nil {
 		return nil, errors.Join(ErrParseCfg, err)
 	}
+
+	// poolConfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+	// 	pgxUUID.Register(conn.TypeMap())
+
+	// 	return nil
+	// }
 
 	for connAttempts > 0 {
 		pool, err = pgxpool.NewWithConfig(context.Background(), poolConfig)
@@ -55,7 +61,7 @@ func New(dbUrl string) (*Pgx5, error) {
 
 	log.Printf("Postgres connected, connAttempts: %d", connAttempts)
 
-	return &Pgx5{Pool: pool}, nil
+	return &Pgx5{Pool: pool, Scany: pgxscan.DefaultAPI}, nil
 }
 
 func (p *Pgx5) Close() {

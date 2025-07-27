@@ -15,4 +15,4 @@ pg:
 
 app:
   dev_mod: true
-  webhook_url: ""
+  webhook_url: "http://example.com"

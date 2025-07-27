@@ -137,23 +137,21 @@ func (h *Handlers) checkTokenPair(c *gin.Context) {
 		return
 	}
 
-	tknsPair, err := h.tm.ParseTokenPair(accessT, refreshT,
-		core.AccessTokenClaims{}, core.RefreshTokenClaims{})
-
-	// В данном случае истекший токен доступа не считается ошибкой.
-	if err != nil && !errors.Is(err, tokens.ErrAccessTokenExpired) {
+	parsedTkns, err := h.tm.ParseTokenPair(accessT, refreshT, &core.AccessTokenClaims{}, &core.RefreshTokenClaims{})
+	if err != nil {
 		c.Status(http.StatusUnauthorized)
 		c.Error(apperrors.New(err, ErrAuth))
 		return
 	}
-	accessClaims, ok := tknsPair.AccessToken.Claims.(core.AccessTokenClaims)
+
+	accessClaims, ok := parsedTkns.AccessToken.Claims.(*core.AccessTokenClaims)
 	if !ok {
 		c.Status(http.StatusUnauthorized)
 		c.Error(apperrors.New(ErrTypeAssertAccessClaims, ErrAuth))
 		return
 	}
 
-	refreshClaims, ok := tknsPair.AccessToken.Claims.(core.AccessTokenClaims)
+	refreshClaims, ok := parsedTkns.RefreshToken.Claims.(*core.RefreshTokenClaims)
 	if !ok {
 		c.Status(http.StatusUnauthorized)
 		c.Error(apperrors.New(ErrTypeAssertRefreshClaims, ErrAuth))
