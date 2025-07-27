@@ -63,3 +63,11 @@ type errMeResp struct {
 }
 
 var _ = errMeResp{}
+
+// Эта структура только для примера ответа в swagger
+type errAuthResp struct {
+	Success bool   `json:"success" example:"false"`
+	Message string `json:"message" example:"error authorization"`
+}
+
+var _ = errAuthResp{}

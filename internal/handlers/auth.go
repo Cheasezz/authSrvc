@@ -84,7 +84,7 @@ func (h *Handlers) me(c *gin.Context) {
 // @Param Cookie header string true "Refersh token cooliee"
 // @Success 200 {object} TokenResponse
 // @Header 	200 {string} Set-Cookie "JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
-// @Failure 400 {object} errBadRequestResp
+// @Failure 401 {object} errAuthResp
 // @Failure 500 {object} errTokenIssuanceResp
 // @Security		bearerAuth
 // @Router 	/session/refresh [post]

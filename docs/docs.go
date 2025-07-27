@@ -140,10 +140,10 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handlers.errBadRequestResp"
+                            "$ref": "#/definitions/handlers.errEmptyAuthHeaderResp"
                         }
                     },
                     "500": {
@@ -172,6 +172,24 @@ const docTemplate = `{
                 "access": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTE5MDUzMDQsInN1YiI6ImZiNjJhYTgxLTExNzItNGM3My04ZmMzLWNkNWE0NDYzNDZiYSJ9.SZHR-VexEcSNwe1GbmiG0p8lQVMTLH9MOIWV2N3I4ZMXEtYWF4Zcm4SKeaGFND7JCZ858VmId1WgPXKxTzF_iA"
+                },
+                "refresh_cookie": {
+                    "description": "Это поле только для swagger и имеет значение только в dev моде.",
+                    "type": "string",
+                    "example": "refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uX2lkIjoiZDdhOTk2YjctOWZlNi00YjRlLWI4NWItODM3YzAyN2RmNDU3Iiwic3ViIjoiZmI2MmFhODEtMTE3Mi00YzczLThmYzMtY2Q1YTQ0NjM0NmJhIiwiZXhwIjoxNzUzNjE4MzUxfQ.SdTNSloBSOnxHJeq6FWlN3UuiyZBOzL9P5OQVp23Wlg; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax"
+                }
+            }
+        },
+        "handlers.errAuthResp": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "error authorization"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },
@@ -181,6 +199,19 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "create session: error: uncorrect uuid"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "handlers.errEmptyAuthHeaderResp": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "error empty auth header"
                 },
                 "success": {
                     "type": "boolean",
