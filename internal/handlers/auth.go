@@ -19,7 +19,7 @@ var (
 // @Tags auth
 // @Summary create session
 // @Description create session in db with ip and user agent.
-// Return access token in JSON and refresh token in cookies
+// @Description Return access token in JSON and refresh token in cookies
 // @ID create-session
 // @Produce json
 // @Param 	uuid query string true "User uuid" example(fb62aa81-1172-4c73-8fc3-cd5a446346bf)
@@ -53,7 +53,7 @@ func (h *Handlers) tokenIssuance(c *gin.Context) {
 // @Tags auth
 // @Summary return curent user id
 // @Description chek Authorization header and extract user id from claims in jwt.
-// Set user id in gin context and return json with user id.
+// @Description Set user id in gin context and return json with user id.
 // @ID me
 // @Produce  json
 // @Success 200 {object} MeResponse
@@ -75,9 +75,9 @@ func (h *Handlers) me(c *gin.Context) {
 // @Tags auth
 // @Summary refresh session
 // @Description check access and refresh tokens.
-// Abort request if user agent not like in db and delete session from db.
-// Send post request on webhook if ip not like in db.
-// If everything ok, then delete old session from db and generete new with new tokens.
+// @Description Abort request if user agent not like in db and delete session from db.
+// @Description Send post request on webhook if ip not like in db.
+// @Description If everything ok, then delete old session from db and generete new with new tokens.
 // @ID refresh-session
 // @Produce json
 // @Param Cookie header string true "Refersh token cookie"
@@ -118,8 +118,8 @@ func (h *Handlers) refresh(c *gin.Context) {
 // @Tags auth
 // @Summary logout
 // @Description check access and refresh tokens.
-// Delete session by id and set empty tokens in json response and cookie.
-// Even if there are errors in the handler, it will still set empty tokens.
+// @Description Delete session by id and set empty tokens in json response and cookie.
+// @Description Even if there are errors in the handler, it will still set empty tokens.
 // @ID delete-session
 // @Produce json
 // @Success 200 {object} TokenResponse

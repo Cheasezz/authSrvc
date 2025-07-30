@@ -61,7 +61,10 @@ info:
 paths:
   /session:
     delete:
-      description: check access and refresh tokens.
+      description: |-
+        check access and refresh tokens.
+        Delete session by id and set empty tokens in json response and cookie.
+        Even if there are errors in the handler, it will still set empty tokens.
       operationId: delete-session
       produces:
       - application/json
@@ -85,7 +88,9 @@ paths:
       tags:
       - auth
     post:
-      description: create session in db with ip and user agent.
+      description: |-
+        create session in db with ip and user agent.
+        Return access token in JSON and refresh token in cookies
       operationId: create-session
       parameters:
       - description: User uuid
@@ -119,7 +124,9 @@ paths:
       - auth
   /session/me:
     get:
-      description: chek Authorization header and extract user id from claims in jwt.
+      description: |-
+        chek Authorization header and extract user id from claims in jwt.
+        Set user id in gin context and return json with user id.
       operationId: me
       produces:
       - application/json
@@ -139,7 +146,11 @@ paths:
       - auth
   /session/refresh:
     post:
-      description: check access and refresh tokens.
+      description: |-
+        check access and refresh tokens.
+        Abort request if user agent not like in db and delete session from db.
+        Send post request on webhook if ip not like in db.
+        If everything ok, then delete old session from db and generete new with new tokens.
       operationId: refresh-session
       parameters:
       - description: Refersh token cookie

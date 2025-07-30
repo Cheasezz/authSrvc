@@ -10,7 +10,7 @@
     "paths": {
         "/session": {
             "post": {
-                "description": "create session in db with ip and user agent.",
+                "description": "create session in db with ip and user agent.\nReturn access token in JSON and refresh token in cookies",
                 "produces": [
                     "application/json"
                 ],
@@ -62,7 +62,7 @@
                         "bearerAuth": []
                     }
                 ],
-                "description": "check access and refresh tokens.",
+                "description": "check access and refresh tokens.\nDelete session by id and set empty tokens in json response and cookie.\nEven if there are errors in the handler, it will still set empty tokens.",
                 "produces": [
                     "application/json"
                 ],
@@ -100,7 +100,7 @@
                         "bearerAuth": []
                     }
                 ],
-                "description": "chek Authorization header and extract user id from claims in jwt.",
+                "description": "chek Authorization header and extract user id from claims in jwt.\nSet user id in gin context and return json with user id.",
                 "produces": [
                     "application/json"
                 ],
@@ -132,7 +132,7 @@
                         "bearerAuth": []
                     }
                 ],
-                "description": "check access and refresh tokens.",
+                "description": "check access and refresh tokens.\nAbort request if user agent not like in db and delete session from db.\nSend post request on webhook if ip not like in db.\nIf everything ok, then delete old session from db and generete new with new tokens.",
                 "produces": [
                     "application/json"
                 ],
