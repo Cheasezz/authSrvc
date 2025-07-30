@@ -52,6 +52,7 @@ func (h *Handlers) Init(devMod bool) *gin.Engine {
 		protected := session.Group("", extractAccessToken)
 		{
 			protected.GET("/me", h.checkUserAccess, h.me)
+			protected.DELETE("", h.checkUserAccess, h.logout)
 			protected.POST("/refresh", extractRefreshToken, h.checkTokenPair, h.refresh)
 
 		}

@@ -11,6 +11,7 @@ import (
 type AuthService interface {
 	IssueTokens(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*TokenPairResult, error)
 	Refresh(ctx context.Context, refreshTkn, sessionId, userAgent, ip string) (*TokenPairResult, error)
+	DeleteSession(ctx context.Context, sessionId string) (*TokenPairResult, error)
 }
 
 type AuthRepo interface {

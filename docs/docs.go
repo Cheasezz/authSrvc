@@ -18,9 +18,6 @@ const docTemplate = `{
         "/session": {
             "post": {
                 "description": "create session in db with ip and user agent.",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -62,6 +59,42 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/handlers.errTokenIssuanceResp"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "check access and refresh tokens.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "logout",
+                "operationId": "delete-session",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TokenResponse"
+                        },
+                        "headers": {
+                            "Set-Cookie": {
+                                "type": "string",
+                                "description": "JWT refreshToken Example: refreshToken=; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.errAuthResp"
                         }
                     }
                 }
@@ -107,9 +140,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "check access and refresh tokens.",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -121,7 +151,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Refersh token cooliee",
+                        "description": "Refersh token cookie",
                         "name": "Cookie",
                         "in": "header",
                         "required": true
@@ -143,7 +173,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handlers.errEmptyAuthHeaderResp"
+                            "$ref": "#/definitions/handlers.errAuthResp"
                         }
                     },
                     "500": {
@@ -199,19 +229,6 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "create session: error: uncorrect uuid"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": false
-                }
-            }
-        },
-        "handlers.errEmptyAuthHeaderResp": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "error empty auth header"
                 },
                 "success": {
                     "type": "boolean",

@@ -35,15 +35,6 @@ definitions:
         example: false
         type: boolean
     type: object
-  handlers.errEmptyAuthHeaderResp:
-    properties:
-      message:
-        example: error empty auth header
-        type: string
-      success:
-        example: false
-        type: boolean
-    type: object
   handlers.errMeResp:
     properties:
       message:
@@ -69,9 +60,31 @@ info:
   version: "1.0"
 paths:
   /session:
-    post:
-      consumes:
+    delete:
+      description: check access and refresh tokens.
+      operationId: delete-session
+      produces:
       - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: 'JWT refreshToken Example: refreshToken=; Path=/; Max-Age=2628000;
+                HttpOnly; Secure; SameSite=None'
+              type: string
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.errAuthResp'
+      security:
+      - bearerAuth: []
+      summary: logout
+      tags:
+      - auth
+    post:
       description: create session in db with ip and user agent.
       operationId: create-session
       parameters:
@@ -126,12 +139,10 @@ paths:
       - auth
   /session/refresh:
     post:
-      consumes:
-      - application/json
       description: check access and refresh tokens.
       operationId: refresh-session
       parameters:
-      - description: Refersh token cooliee
+      - description: Refersh token cookie
         in: header
         name: Cookie
         required: true
@@ -151,7 +162,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/handlers.errEmptyAuthHeaderResp'
+            $ref: '#/definitions/handlers.errAuthResp'
         "500":
           description: Internal Server Error
           schema:

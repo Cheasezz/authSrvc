@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Cheasezz/authSrvc/internal/apperrors"
+	"github.com/Cheasezz/authSrvc/internal/core"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -20,7 +21,6 @@ var (
 // @Description create session in db with ip and user agent.
 // Return access token in JSON and refresh token in cookies
 // @ID create-session
-// @Accept  json
 // @Produce json
 // @Param 	uuid query string true "User uuid" example(fb62aa81-1172-4c73-8fc3-cd5a446346bf)
 // @Success 200 {object} TokenResponse
@@ -79,9 +79,8 @@ func (h *Handlers) me(c *gin.Context) {
 // Send post request on webhook if ip not like in db.
 // If everything ok, then delete old session from db and generete new with new tokens.
 // @ID refresh-session
-// @Accept  json
 // @Produce json
-// @Param Cookie header string true "Refersh token cooliee"
+// @Param Cookie header string true "Refersh token cookie"
 // @Success 200 {object} TokenResponse
 // @Header 	200 {string} Set-Cookie "JWT refreshToken Example: refreshToken=9838c5.9cf.f93e21; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
 // @Failure 401 {object} errAuthResp
@@ -114,4 +113,34 @@ func (h *Handlers) refresh(c *gin.Context) {
 	}
 
 	newTokensResponse(c, tkns)
+}
+
+// @Tags auth
+// @Summary logout
+// @Description check access and refresh tokens.
+// Delete session by id and set empty tokens in json response and cookie.
+// Even if there are errors in the handler, it will still set empty tokens.
+// @ID delete-session
+// @Produce json
+// @Success 200 {object} TokenResponse
+// @Header 	200 {string} Set-Cookie "JWT refreshToken Example: refreshToken=; Path=/; Max-Age=2628000; HttpOnly; Secure; SameSite=None"
+// @Failure 401 {object} errAuthResp
+// @Security		bearerAuth
+// @Router 	/session [delete]
+func (h *Handlers) logout(c *gin.Context) {
+	var emptyTkns *core.TokenPairResult
+
+	sessionId, err := getSessionIdCtx(c)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		c.Error(apperrors.New(err, ErrAuth))
+	}
+
+	emptyTkns, err = h.services.DeleteSession(c, sessionId)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		c.Error(apperrors.New(err, ErrAuth))
+	}
+
+	newTokensResponse(c, emptyTkns)
 }

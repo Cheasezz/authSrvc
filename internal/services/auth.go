@@ -23,6 +23,7 @@ var (
 	ErrTokenshashCompare = errors.New("error when compare tokens hash in Refresh")
 	ErrUserAgent         = errors.New("error when compare user agent in Refresh (not equal)")
 	ErrWebhookStatusCode = errors.New("error webhook returned not 2xx status code")
+	ErrDeleteSession     = errors.New("error in DeleteSession")
 )
 
 func (s *services) IssueTokens(ctx context.Context, userId uuid.UUID, userAgent, ip string) (*core.TokenPairResult, error) {
@@ -182,4 +183,13 @@ func (s *services) sendWebhook(payload *core.RefreshChangeIpPayload) error {
 	}
 
 	return nil
+}
+
+func (s *services) DeleteSession(ctx context.Context, sessionId string) (*core.TokenPairResult, error) {
+	err := s.repo.DeleteSessionById(ctx, sessionId)
+	if err != nil {
+		return nil, errors.Join(ErrDeleteSession, err)
+	}
+
+	return &core.TokenPairResult{}, nil
 }

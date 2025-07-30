@@ -9,6 +9,7 @@ import (
 	"github.com/Cheasezz/authSrvc/internal/core"
 	"github.com/Cheasezz/authSrvc/pkg/tokens"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const (
@@ -25,6 +26,7 @@ var (
 	ErrTypeAssertAccessClaims  = errors.New("error type assertion access token claims")
 	ErrTypeAssertRefreshClaims = errors.New("error type assertion refresh token claims")
 	ErrNotEqualSessionId       = errors.New("error not equal sessionId in claims")
+	ErrInvalidUUID             = errors.New("error invalid uuid")
 )
 
 func (h *Handlers) errMiddleware(c *gin.Context) {
@@ -105,15 +107,30 @@ func (h *Handlers) checkUserAccess(c *gin.Context) {
 		c.Error(apperrors.New(err, ErrParseAccessToken))
 		return
 	}
+
+	accessClaims, ok := parsedToken.Claims.(*core.AccessTokenClaims)
+	if !ok {
+		c.Status(http.StatusUnauthorized)
+		c.Error(apperrors.New(ErrTypeAssertAccessClaims, ErrAuth))
+		return
+	}
 	// В sub находится userId
-	userId, err := parsedToken.Claims.GetSubject()
+	userId, err := accessClaims.GetSubject()
 	if err != nil {
 		c.Status(http.StatusUnauthorized)
 		c.Error(apperrors.New(err, ErrAuth))
 		return
 	}
 
+	err = uuid.Validate(accessClaims.SessionId)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		c.Error(apperrors.New(err, ErrInvalidUUID))
+		return
+	}
+
 	c.Set(userIdCtx, userId)
+	c.Set(sessionIdCtx, accessClaims.SessionId)
 
 	c.Next()
 }
